@@ -87,7 +87,7 @@ p2 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) +
   )
 
 ## in order to make interactive, we will view the plot using ggplotly() function
-ggplotly(p2)
+#ggplotly(p2)
 ## you should be able to hover mouse over individual points to see count and year
 ## if you don't want the graph to show up inside R markdown file:
     ## click on gear aside of knit at top
