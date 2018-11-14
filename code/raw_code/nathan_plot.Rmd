@@ -5,8 +5,10 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Loading packages for wrangling name data
-```{r setup, include=FALSE, echo=FALSE}
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+##Loading packages for wrangling data
+
 ## install packages if necessary
 list.of.packages <- c("dplyr", "ggplot2", 'plotly')
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -22,30 +24,61 @@ library(plotly)
 knitr::opts_knit$set(root.dir = '~/Desktop/codes/babynames/')
 ```
 
-## Getting names data
+### Getting names data
 
 This data comes from [kaggle.com](https://www.kaggle.com/kaggle/us-baby-names), which has collected all recorded names for children born in the United States between the years 1880-2014.
 
-```{r names-data, warning=FALSE, echo=FALSE}
+```{r names-data, warning=FALSE, echo=TRUE}
 ## reading in baby names csv
-names <- read.csv('data/raw_data/NationalNames.csv')
+names <- read.csv('Baby-Name-Project/data/raw_data/NationalNames.csv')
 ```
 
 ## Limiting to boys named Nathan or Nate
 
-```{r Nate-Nathan, warning=FALSE, echo=FALSE}
+```{r Nate-Nathan, warning=FALSE, echo=TRUE}
 
 ## filter out only babies with names 'Nathan' or 'Nate' and 'Male'
 ## this is accomplished using the filter() function available through dplyr package
 dnn <- names %>% filter(Gender == 'M', Name == 'Nathan' | Name == 'Nate' | Name == 'Nathanial' | Name == 'Nathaniel' | Name == 'Nathanael')
 ```
 
-## Creating interactive plot
+### Creating interactive plot
 
-```{r plot, warning=False, echo=FALSE}
+```{r plot, warning=FALSE, echo=TRUE}
 
-## first create ggplot, which is a line plot with dots
+## cleaner looking graph with annotations
 p1 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) + 
+  geom_line(size=1) + 
+  labs(title='Baby boys with Nathan-related names',
+       subtitle='United States, 1880-2014', 
+       caption='Source: www.kaggle.com') + 
+  ylab('Number of babies') +
+  scale_x_continuous(breaks=seq(1880,2014, by=10)) +
+  annotate('rect', xmin=1989, xmax=1991, ymin=0, ymax=Inf, fill= 'cadetblue3', alpha=0.6) + 
+  annotate('text', label = '1990', y=12500, x=1988, size=5, hjust='right') + 
+  theme(
+    plot.title = element_text(face='bold', size = 16),
+    plot.subtitle = element_text(size=13),
+    plot.margin = unit(c(1,1,1,1), 'lines'),
+    axis.text = element_text(size=10, color='black'),
+    axis.title.y = element_text(size=12, face='bold', margin = margin(t=0,r=10,b=0,l=0)),
+    axis.title.x = element_text(size=12, face='bold', margin = margin(t=10,r=0,b=0,l=0)),
+    legend.position = c(0.15,0.7),
+    legend.text = element_text(size=12),
+    legend.title = element_text(size=12, face='bold'),
+    legend.background = element_rect(fill='white', size=0.5, linetype='solid', color='black')
+  )
+
+p1
+
+```
+
+### Interactive Plot
+
+```{r interactive-plot, warning=FALSE, echo=TRUE}
+
+## interactive plot
+p2 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) + 
   geom_line() + 
   geom_point() + 
   ylab('Number of babies') + 
@@ -53,24 +86,28 @@ p1 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) +
     plot.margin = unit(c(1,1,1,1), 'lines')
   )
 
-## cleaner looking graph with annotations
-p2 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) + 
-  geom_line(size=1) + 
-  labs(title='Baby boys named Nathan, Nate, Nathanael, Nathanial and Nathaniel',
-       subtitle='United States, 1880-2014', 
-       caption='Source: www.kaggle.com') + 
-  ylab('Number of babies') + 
-  scale_x_continuous(breaks=seq(1880,2014, by=10)) + 
-  theme(
-    plot.margin = unit(c(1,1,1,1), 'lines')
-  )
-
 ## in order to make interactive, we will view the plot using ggplotly() function
-ggplotly(p1)
-p2
-
+ggplotly(p2)
 ## you should be able to hover mouse over individual points to see count and year
 ## if you don't want the graph to show up inside R markdown file:
     ## click on gear aside of knit at top
     ## select 'Chuck Output in Console'
+```
+
+```{r saving data, warning=FALSE, echo=FALSE}
+## raw data as .rds
+## it is good pratice to save imported data in event it gets lost or corrupt. 
+## always save anthing obtained from online (especially from html)
+saveRDS(names, 'Baby-Name-Project/data/raw_data/all-names.rds')
+
+## processed data containing only Nathan and Nathan-realted names for boys
+saveRDS(dnn, 'Baby-Name-Project/data/processed_data/Nathan-related-names.rds')
+```
+
+
+```{r saving image, warning=FALSE, echo=FALSE}
+
+ggsave(plot=p1, filename='Nathan-Names.png', 
+       path = 'Baby-Name-Project/figures/explanatory_figures/', 
+       height=5.58, width = 8, unit=c('in'))
 ```
