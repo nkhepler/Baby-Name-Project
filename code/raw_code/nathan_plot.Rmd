@@ -32,11 +32,15 @@ knitr::opts_knit$set(root.dir = '~/Desktop/codes/babynames/')
 This data comes from [kaggle.com](https://www.kaggle.com/kaggle/us-baby-names), which has collected all recorded names for children born in the United States between the years 1880-2014.
 
 ```{r names-data, warning=FALSE, echo=TRUE}
-## reading in baby names csv
-names <- read.csv('Baby-Name-Project/data/raw_data/NationalNames.csv')
+## first read in baby names csv
+## names <- read.csv('Baby-Name-Project/data/raw_data/NationalNames.csv')
+## save as RDS and remove CSV to save space
+names <- readRDS('Baby-Name-Project/data/raw_data/all-names.rds')
 
 ## reading in baby names by stat
-state <- read.csv('Baby-Name-Project/data/raw_data/StateNames.csv')
+## state <- read.csv('Baby-Name-Project/data/raw_data/StateNames.csv')
+## save as RDS file and remove CSV
+state <- readRDS('Baby-Name-Project/data/raw_data/state-names.rds')
 ```
 
 ## Limiting to boys named Nathan or Nate
@@ -105,8 +109,7 @@ p2 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) +
   )
 
 ## in order to make interactive, we will view the plot using ggplotly() function.
-## uncomment below
-#ggplotly(p2)
+ggplotly(p2)
 
 ## you should be able to hover mouse over individual points to see count and year
 ## if you don't want the graph to show up inside R markdown file:
