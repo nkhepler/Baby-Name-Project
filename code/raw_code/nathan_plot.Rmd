@@ -12,7 +12,7 @@ editor_options:
 ##Loading packages for wrangling data
 
 ## install packages if necessary
-list.of.packages <- c("dplyr", "ggplot2", 'plotly')
+list.of.packages <- c("dplyr", "ggplot2", 'plotly', 'usmap')
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -20,6 +20,7 @@ if(length(new.packages)) install.packages(new.packages)
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(usmap)
 
 ## set working directoy to wherever bab names csv is located
 ## this needs to be done in chunk preceding any chunks which rely on working directory setting 
@@ -33,6 +34,9 @@ This data comes from [kaggle.com](https://www.kaggle.com/kaggle/us-baby-names), 
 ```{r names-data, warning=FALSE, echo=TRUE}
 ## reading in baby names csv
 names <- read.csv('Baby-Name-Project/data/raw_data/NationalNames.csv')
+
+## reading in baby names by stat
+state <- read.csv('Baby-Name-Project/data/raw_data/StateNames.csv')
 ```
 
 ## Limiting to boys named Nathan or Nate
@@ -41,7 +45,19 @@ names <- read.csv('Baby-Name-Project/data/raw_data/NationalNames.csv')
 
 ## filter out only babies with names 'Nathan' or 'Nate' and 'Male'
 ## this is accomplished using the filter() function available through dplyr package
-dnn <- names %>% filter(Gender == 'M', Name == 'Nathan' | Name == 'Nate' | Name == 'Nathanial' | Name == 'Nathaniel' | Name == 'Nathanael')
+dnn <- names %>% 
+  filter(Gender == 'M', 
+         Name == 'Nathan' | Name == 'Nate' | Name == 'Nathanial' | Name == 'Nathaniel' | Name == 'Nathanael')
+
+## filtering out all other names for each state
+state_dnn <- state %>% 
+  filter(Gender == 'M', Name == 'Nathan')
+
+## summing total number of Nathan's for each state
+state_dnn_sum <- state_dnn %>% 
+  group_by(State) %>%
+  select(Name, state=State, Count) %>%
+  summarize(total=sum(Count))
 ```
 
 ### Creating interactive plot
@@ -89,12 +105,37 @@ p2 <- ggplot(data=dnn, aes(x=Year, y=Count, color=Name)) +
   )
 
 ## in order to make interactive, we will view the plot using ggplotly() function
-#ggplotly(p2)
+ggplotly(p2)
 ## you should be able to hover mouse over individual points to see count and year
 ## if you don't want the graph to show up inside R markdown file:
     ## click on gear aside of knit at top
     ## select 'Chuck Output in Console'
 ```
+
+
+### Mapping total number of Nathans by state
+
+Making a heatplot for total number of Nathans born in each state
+
+```{r Nathans by state, warning=FALSE, echo=TRUE}
+
+p3 <- plot_usmap(data=state_dnn_sum, values = 'total') + 
+  scale_fill_continuous(name = 'Total', low='blue', high='red', labels=scales::comma) + 
+  labs(title='Total Number of Nathans By State', 
+       subtitle = 'US babies born 1880-2014', 
+       caption='Source: Kaggle.com') + 
+  theme(
+    legend.position = 'right',
+    legend.title = element_text(size=11, face='bold'),
+    legend.text = element_text(size=9),
+    plot.title = element_text(size=16, face='bold'),
+    plot.subtitle = element_text(size=13),
+    plot.caption = element_text(size=9)
+  )
+
+p3
+```
+
 
 ```{r saving data, warning=FALSE, echo=FALSE}
 ## raw data as .rds
@@ -104,6 +145,16 @@ saveRDS(names, 'Baby-Name-Project/data/raw_data/all-names.rds')
 
 ## processed data containing only Nathan and Nathan-realted names for boys
 saveRDS(dnn, 'Baby-Name-Project/data/processed_data/Nathan-related-names.rds')
+
+## state data unprocessed
+saveRDS(state, 'Baby-Name-Project/data/raw_data/state-names.rds')
+
+## processed data containing only Nathan for each state, including years
+saveRDS(state_dnn, 'Baby-Name-Project/data/raw_data/state-Nathans-by-year.rds')
+
+## processed data containing summed Nathans by state
+## meaning, only one value for each state which is all the Nathans that were ever born there
+saveRDS(state_dnn_sum, 'Baby-Name-Project/data/raw_data/state-Nathans-total.rds')
 ```
 
 
@@ -112,4 +163,8 @@ saveRDS(dnn, 'Baby-Name-Project/data/processed_data/Nathan-related-names.rds')
 ggsave(plot=p1, filename='Nathan-Names.png', 
        path = 'Baby-Name-Project/figures/explanatory_figures/', 
        height=5.58, width = 8, unit=c('in'))
+
+ggsave(plot=p3, filename='Nathan-By-State.png',
+       path='Baby-Name-Project/figures/explanatory_figures/',
+       height=4, width=4, unit=c('in'))
 ```
