@@ -1,7 +1,7 @@
 # Baby-Name-Project
 Names of all US babies born 1880-2014
 
-R markdown file in Raw code
+R markdown file in code/raw_code
 
   contains code for:
   
