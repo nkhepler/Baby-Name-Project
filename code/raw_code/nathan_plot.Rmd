@@ -22,6 +22,7 @@ library(ggplot2)
 library(plotly)
 library(usmap)
 library(patchwork)
+library(knitr)
 
 ## set working directoy to wherever bab names csv is located
 ## this needs to be done in chunk preceding any chunks which rely on working directory setting 
@@ -43,6 +44,29 @@ names <- readRDS('Baby-Name-Project/data/raw_data/all-names.rds')
 ## save as RDS file and remove CSV
 state <- readRDS('Baby-Name-Project/data/raw_data/state-names.rds')
 ```
+
+
+## Top 10 boys names
+
+```{r top 100 boys names, warning=FALSE, echo=TRUE}
+
+## summing totals and organizing into descending order (most to least)
+descending <- names %>%
+  filter(Gender == 'M') %>%
+  group_by(Name) %>%
+  select(Name, Count) %>%
+  summarise(total=sum(Count)) %>%
+  arrange(desc(total))
+
+## making table that displays top 10 names
+top10 = descending[1:10,]
+
+kable(top10, digits=0, 'html', caption = 'Top 10 Names for Baby Boys, US 1880-2014') %>% 
+  kableExtra::kable_styling('striped', 'bordered') %>%
+  kableExtra::footnote(general='Kaggle.com', general_title = 'Source: ', footnote_as_chunk = T)
+
+```
+
 
 ## Limiting to boys named Nathan and Nathan-realted Names
 
@@ -92,6 +116,7 @@ prop_Nat <- data.frame(sum_names_state$state, (state_dnnat_sum$total/sum_names_s
     df <- data_frame(state=x$state, prop = x$total/max(x$total))})
 
 ```
+
 
 ### Creating interactive plot
 
