@@ -21,6 +21,7 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(usmap)
+library(patchwork)
 
 ## set working directoy to wherever bab names csv is located
 ## this needs to be done in chunk preceding any chunks which rely on working directory setting 
@@ -43,7 +44,7 @@ names <- readRDS('Baby-Name-Project/data/raw_data/all-names.rds')
 state <- readRDS('Baby-Name-Project/data/raw_data/state-names.rds')
 ```
 
-## Limiting to boys named Nathan or Nate
+## Limiting to boys named Nathan and Nathan-realted Names
 
 ```{r Nate-Nathan, warning=FALSE, echo=TRUE}
 
@@ -72,6 +73,20 @@ sum_names_state <- state %>%
 ## getting proportion of Nathans for each state
 ## use set_colnames to alter header bc gets changed
 prop_N <- data.frame(sum_names_state$state, (state_dnn_sum$total/sum_names_state$total)) %>%
+  magrittr::set_colnames(c('state', 'total')) %>% 
+  (function(x){
+    df <- data_frame(state=x$state, prop = x$total/max(x$total))})
+
+## summing total Nathaniels by state and filtering
+state_dnnat <- state %>% 
+  filter(Gender == 'M', Name == 'Nathaniel')
+
+state_dnnat_sum <- state_dnnat %>% 
+  group_by(State) %>%
+  select(Name, state=State, Count) %>%
+  summarize(total=sum(Count))
+
+prop_Nat <- data.frame(sum_names_state$state, (state_dnnat_sum$total/sum_names_state$total)) %>%
   magrittr::set_colnames(c('state', 'total')) %>% 
   (function(x){
     df <- data_frame(state=x$state, prop = x$total/max(x$total))})
@@ -155,6 +170,27 @@ p3 <- plot_usmap(data=prop_N, values = 'prop') +
 p3
 ```
 
+## Mapping total Nathaniels by State
+
+```{r Nathaniels by state, warning=FALSE, echo=TRUE}
+
+p4 <- plot_usmap(data=prop_Nat, values = 'prop') + 
+  scale_fill_gradient(name = 'Proportion', low='blue', high='red') + 
+  labs(title='Proportion of Babies Named Nathaniel By State', 
+       subtitle = 'US babies born 1880-2014', 
+       caption='Source: Kaggle.com') + 
+  theme(
+    legend.position = 'right',
+    legend.title = element_text(size=11, face='bold'),
+    legend.text = element_text(size=9),
+    plot.title = element_text(size=16, face='bold'),
+    plot.subtitle = element_text(size=13),
+    plot.caption = element_text(size=9)
+  )
+
+p3
+
+```
 
 ```{r saving data, warning=FALSE, echo=FALSE}
 ## raw data as .rds
@@ -181,6 +217,15 @@ saveRDS(sum_names_state, 'Baby-Name-Project/data/processed_data/total-babies-sta
 ## normalized data for proportion of Nathans by state
 saveRDS(prop_N, 'Baby-Name-Project/data/processed_data/prop-Nathans-state.rds')
 
+## processed data containing only Nathan for each state, including years
+saveRDS(state_dnnat, 'Baby-Name-Project/data/processed_data/state-Nathaniels-by-year.rds')
+
+## processed data containing summed Nathniels by state
+saveRDS(state_dnnat_sum, 'Baby-Name-Project/data/processed_data/state-Nathaniels-total.rds')
+
+## normalized data for proportion of Nathans by state
+saveRDS(prop_Nat, 'Baby-Name-Project/data/processed_data/prop-Nathaniels-state.rds')
+
 ```
 
 
@@ -192,5 +237,17 @@ ggsave(plot=p1, filename='Nathan-Names.png',
 
 ggsave(plot=p3, filename='Nathan-By-State.png',
        path='Baby-Name-Project/figures/explanatory_figures/',
-       height=4, width=4, unit=c('in'))
+       height=4, width=6, unit=c('in'))
+
+ggsave(plot=p4, filename='Nathaniel-By-State.png',
+       path='Baby-Name-Project/figures/explanatory_figures/',
+       height=4, width=6, unit=c('in'))
+
+## combined Nathan and Nathaniel by state
+p5=p3+p4+plot_layout(ncol=1)
+
+ggsave(plot=p5, filename='Nathan-and-Nathaniel-By-State.png',
+       path='Baby-Name-Project/figures/explanatory_figures/',
+       height=8, width=6, unit=c('in'))
+
 ```
