@@ -140,7 +140,7 @@ Making a heatplot for proportion of Nathans born in each state
 
 p3 <- plot_usmap(data=prop_N, values = 'prop') + 
   scale_fill_gradient(name = 'Proportion', low='blue', high='red') + 
-  labs(title='Proportion of Nathans By State', 
+  labs(title='Proportion of Babies Named Nathan By State', 
        subtitle = 'US babies born 1880-2014', 
        caption='Source: Kaggle.com') + 
   theme(
