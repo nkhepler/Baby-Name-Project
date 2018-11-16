@@ -62,6 +62,20 @@ state_dnn_sum <- state_dnn %>%
   group_by(State) %>%
   select(Name, state=State, Count) %>%
   summarize(total=sum(Count))
+
+## getting total number of people per state
+sum_names_state <- state %>%
+  group_by(State) %>%
+  select(state=State, Count) %>%
+  summarize(total=sum(Count))
+
+## getting proportion of Nathans for each state
+## use set_colnames to alter header bc gets changed
+prop_N <- data.frame(sum_names_state$state, (state_dnn_sum$total/sum_names_state$total)) %>%
+  magrittr::set_colnames(c('state', 'total')) %>% 
+  (function(x){
+    df <- data_frame(state=x$state, prop = x$total/max(x$total))})
+
 ```
 
 ### Creating interactive plot
@@ -120,13 +134,13 @@ ggplotly(p2)
 
 ### Mapping total number of Nathans by state
 
-Making a heatplot for total number of Nathans born in each state
+Making a heatplot for proportion of Nathans born in each state
 
 ```{r Nathans by state, warning=FALSE, echo=TRUE}
 
-p3 <- plot_usmap(data=state_dnn_sum, values = 'total') + 
-  scale_fill_continuous(name = 'Total', low='blue', high='red', labels=scales::comma) + 
-  labs(title='Total Number of Nathans By State', 
+p3 <- plot_usmap(data=prop_N, values = 'prop') + 
+  scale_fill_gradient(name = 'Proportion', low='blue', high='red') + 
+  labs(title='Proportion of Nathans By State', 
        subtitle = 'US babies born 1880-2014', 
        caption='Source: Kaggle.com') + 
   theme(
@@ -155,11 +169,18 @@ saveRDS(dnn, 'Baby-Name-Project/data/processed_data/Nathan-related-names.rds')
 saveRDS(state, 'Baby-Name-Project/data/raw_data/state-names.rds')
 
 ## processed data containing only Nathan for each state, including years
-saveRDS(state_dnn, 'Baby-Name-Project/data/raw_data/state-Nathans-by-year.rds')
+saveRDS(state_dnn, 'Baby-Name-Project/data/processed_data/state-Nathans-by-year.rds')
 
 ## processed data containing summed Nathans by state
 ## meaning, only one value for each state which is all the Nathans that were ever born there
-saveRDS(state_dnn_sum, 'Baby-Name-Project/data/raw_data/state-Nathans-total.rds')
+saveRDS(state_dnn_sum, 'Baby-Name-Project/data/processed_data/state-Nathans-total.rds')
+
+## processed data containing total number of babies per state
+saveRDS(sum_names_state, 'Baby-Name-Project/data/processed_data/total-babies-state.rds')
+
+## normalized data for proportion of Nathans by state
+saveRDS(prop_N, 'Baby-Name-Project/data/processed_data/prop-Nathans-state.rds')
+
 ```
 
 
