@@ -188,7 +188,7 @@ p4 <- plot_usmap(data=prop_Nat, values = 'prop') +
     plot.caption = element_text(size=9)
   )
 
-p3
+p4
 
 ```
 
