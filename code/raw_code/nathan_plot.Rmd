@@ -23,6 +23,7 @@ library(plotly)
 library(usmap)
 library(patchwork)
 library(knitr)
+library(ggrepel)
 
 ## set working directoy to wherever bab names csv is located
 ## this needs to be done in chunk preceding any chunks which rely on working directory setting 
@@ -64,9 +65,7 @@ top10 = descending[1:10,]
 kable(top10, digits=0, 'html', caption = 'Top 10 Names for Baby Boys, US 1880-2014') %>% 
   kableExtra::kable_styling('striped', 'bordered') %>%
   kableExtra::footnote(general='Kaggle.com', general_title = 'Source: ', footnote_as_chunk = T)
-
 ```
-
 
 ## Limiting to boys named Nathan and Nathan-realted Names
 
@@ -97,9 +96,9 @@ sum_names_state <- state %>%
 ## getting proportion of Nathans for each state
 ## use set_colnames to alter header bc gets changed
 prop_N <- data.frame(sum_names_state$state, (state_dnn_sum$total/sum_names_state$total)) %>%
-  magrittr::set_colnames(c('state', 'total')) %>% 
+  magrittr::set_colnames(c('state', 'total'))%>% 
   (function(x){
-    df <- data_frame(state=x$state, prop = x$total/max(x$total))})
+    df <- data_frame(state=x$state, prop = x$total*100)})
 
 ## summing total Nathaniels by state and filtering
 state_dnnat <- state %>% 
@@ -113,7 +112,7 @@ state_dnnat_sum <- state_dnnat %>%
 prop_Nat <- data.frame(sum_names_state$state, (state_dnnat_sum$total/sum_names_state$total)) %>%
   magrittr::set_colnames(c('state', 'total')) %>% 
   (function(x){
-    df <- data_frame(state=x$state, prop = x$total/max(x$total))})
+    df <- data_frame(state=x$state, prop = x$total*100)})
 
 ```
 
@@ -179,8 +178,8 @@ Making a heatplot for proportion of Nathans born in each state
 ```{r Nathans by state, warning=FALSE, echo=TRUE}
 
 p3 <- plot_usmap(data=prop_N, values = 'prop') + 
-  scale_fill_gradient(name = 'Proportion', low='blue', high='red') + 
-  labs(title='Proportion of Babies Named Nathan By State', 
+  scale_fill_gradient(name = 'Percentage', low='blue', high='red') + 
+  labs(title='Percentage of Babies Named Nathan By State', 
        subtitle = 'US babies born 1880-2014', 
        caption='Source: Kaggle.com') + 
   theme(
@@ -200,8 +199,8 @@ p3
 ```{r Nathaniels by state, warning=FALSE, echo=TRUE}
 
 p4 <- plot_usmap(data=prop_Nat, values = 'prop') + 
-  scale_fill_gradient(name = 'Proportion', low='blue', high='red') + 
-  labs(title='Proportion of Babies Named Nathaniel By State', 
+  scale_fill_gradient(name = 'Percentage', low='blue', high='red') + 
+  labs(title='Percentage of Babies Named Nathaniel By State', 
        subtitle = 'US babies born 1880-2014', 
        caption='Source: Kaggle.com') + 
   theme(
@@ -214,6 +213,74 @@ p4 <- plot_usmap(data=prop_Nat, values = 'prop') +
   )
 
 p4
+
+```
+
+## State preference for Nathan or Nathaniel
+
+```{r state preference, warning=FALSE, echo=TRUE}
+
+## combining Nathan and Nathaniel proportions into single data frame
+props <- data.frame(prop_N$state, prop_N$prop, prop_Nat$prop)
+colnames(props) <- c('state', 'Nathan', 'Nathaniel')
+
+## writing function that will determine which is more popular for each state
+## uses numeric representation: 1==Nathan, 2==Nathaniel
+nathan_or_nathaniel <- function(nathan,nathaniel){
+  bigger = c()
+  for (val in 1:length(nathan)){
+    if (nathan[val] > nathaniel[val]){
+      bigger = append(bigger, '1')
+    }else{
+      bigger = append(bigger, '2')
+    }
+  }
+  return(bigger)
+}
+
+## running function and adding as new column to props data frame
+non <- nathan_or_nathaniel(props$Nathan, props$Nathaniel)
+props$non <- non
+
+## determining which is more popular by state
+det_nvn <- function(non){
+  one = c()
+  two = c()
+  for (val in non){
+    if (val == '1'){
+      one = append(one, 1)
+    }else{
+      two = append(two, 1)
+    }
+  }
+  if (length(one) > length(two)){
+    diff = (length(one) + 1) - length(two)
+    return(paste0('Nathan by ', diff, ' states (including DC)'))
+  }else{
+    diff = (length(two) + 1) - length(one)
+    return(paste0('Nathaniel by ', diff, ' states (including DC'))
+  }
+}
+
+which_is_more <- det_nvn(props$non)
+
+## plotting by state
+p_non <- plot_usmap(data=props, values = 'non') + 
+  scale_fill_manual(name='Variation', 
+                    labels = c('Nathan', 'Nathaniel'), 
+                    values=c('Peach Puff', 'Tomato')) + 
+  labs(title='Nathan vs Nathaniel By State', 
+       subtitle = paste0('US babies born 1880-2014\n\n', which_is_more), 
+       caption='Source: Kaggle.com') + 
+  theme(
+    legend.position = 'right',
+    legend.title = element_text(face='bold', size=13),
+    legend.text = element_text(size=11),
+    plot.title = element_text(size=16, face='bold'),
+    plot.subtitle = element_text(size=13),
+    plot.caption = element_text(size=9)
+  )
+p_non
 
 ```
 
@@ -239,7 +306,7 @@ saveRDS(state_dnn_sum, 'Baby-Name-Project/data/processed_data/state-Nathans-tota
 ## processed data containing total number of babies per state
 saveRDS(sum_names_state, 'Baby-Name-Project/data/processed_data/total-babies-state.rds')
 
-## normalized data for proportion of Nathans by state
+## normalized data for percentages of Nathans by state
 saveRDS(prop_N, 'Baby-Name-Project/data/processed_data/prop-Nathans-state.rds')
 
 ## processed data containing only Nathan for each state, including years
@@ -248,7 +315,7 @@ saveRDS(state_dnnat, 'Baby-Name-Project/data/processed_data/state-Nathaniels-by-
 ## processed data containing summed Nathniels by state
 saveRDS(state_dnnat_sum, 'Baby-Name-Project/data/processed_data/state-Nathaniels-total.rds')
 
-## normalized data for proportion of Nathans by state
+## normalized data for percentages of Nathans by state
 saveRDS(prop_Nat, 'Baby-Name-Project/data/processed_data/prop-Nathaniels-state.rds')
 
 ```
@@ -274,5 +341,9 @@ p5=p3+p4+plot_layout(ncol=1)
 ggsave(plot=p5, filename='Nathan-and-Nathaniel-By-State.png',
        path='Baby-Name-Project/figures/explanatory_figures/',
        height=8, width=6, unit=c('in'))
+
+ggsave(plot=p_non, filename='Nathan-vs-Nathaniel-By-State.png',
+       path='Baby-Name-Project/figures/explanatory_figures/',
+       height=4, width=6, unit=c('in'))
 
 ```
