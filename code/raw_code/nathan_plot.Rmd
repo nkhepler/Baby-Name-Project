@@ -30,6 +30,7 @@ library(ggrepel)
 knitr::opts_knit$set(root.dir = '~/Desktop/codes/babynames/')
 ```
 
+
 ### Getting names data
 
 This data comes from [kaggle.com](https://www.kaggle.com/kaggle/us-baby-names), which has collected all recorded names for children born in the United States between the years 1880-2014.
@@ -49,6 +50,8 @@ state <- readRDS('Baby-Name-Project/data/raw_data/state-names.rds')
 
 ## Top 10 boys names
 
+Exploratory analysis of the top 10 boys names
+
 ```{r top 100 boys names, warning=FALSE, echo=TRUE}
 
 ## summing totals and organizing into descending order (most to least)
@@ -67,7 +70,35 @@ kable(top10, digits=0, 'html', caption = 'Top 10 Names for Baby Boys, US 1880-20
   kableExtra::footnote(general='Kaggle.com', general_title = 'Source: ', footnote_as_chunk = T)
 ```
 
+
+
+## Top 10 girls names
+
+Exploratory analysis of the top 10 girls names.
+
+```{r top 100 girls names, warning=FALSE, echo=TRUE}
+
+## summing totals and organizing into descending order (most to least)
+descending <- names %>%
+  filter(Gender == 'F') %>%
+  group_by(Name) %>%
+  select(Name, Count) %>%
+  summarise(total=sum(Count)) %>%
+  arrange(desc(total))
+
+## making table that displays top 10 names
+top10 = descending[1:10,]
+
+kable(top10, digits=0, 'html', caption = 'Top 10 Names for Baby Girls, US 1880-2014') %>% 
+  kableExtra::kable_styling('striped', 'bordered') %>%
+  kableExtra::footnote(general='Kaggle.com', general_title = 'Source: ', footnote_as_chunk = T)
+```
+
+
+
 ## Limiting to boys named Nathan and Nathan-realted Names
+
+My main interest in this data set was to see how popular my own name is, specifically in comparison to popular variations.
 
 ```{r Nate-Nathan, warning=FALSE, echo=TRUE}
 
@@ -117,7 +148,8 @@ prop_Nat <- data.frame(sum_names_state$state, (state_dnnat_sum$total/sum_names_s
 ```
 
 
-### Creating interactive plot
+
+### Plot illustrating popularity of Nathan-related names
 
 ```{r plot, warning=FALSE, echo=TRUE}
 
@@ -148,7 +180,15 @@ p1
 
 ```
 
+There are a few interesting takeaways from this graph. First, Nathan is by far the most popular variation. However, there is a several decade span in which Nathaniel is more popular. Throughout the 1910s, Nathan was the variation of choice. However, beginning ~1920 and lasting throughout most of the 1950s, Nathaniel notched the #1 position. Then ~1958, Nathan reclaimed the most popular variation, a trend which has lasted at least through 2014.
+
+In terms of rises and falls in popularity, Nathan and Nathaniel exhibit a similar trend (not all that suprising). You would expect to see this kind of relationship among name variants. Interestingly, other observed variations (Nathanial, Nathanael, Nate) do not mirror those trends.
+
+
+
 ### Interactive Plot
+
+Basically the same graph as above, except that it has an interactive component.
 
 ```{r interactive-plot, warning=FALSE, echo=TRUE}
 
@@ -171,9 +211,10 @@ ggplotly(p2)
 ```
 
 
+
 ### Mapping total number of Nathans by state
 
-Making a heatplot for proportion of Nathans born in each state
+Making a heatplot for proportion of Nathans born in each state (shown as percentage relative to the counts of all other names). For example, say a state has a value of 0.4%. This means that 0.4% of all people born in that state since 1880 were named Nathan. That's a frequency of 4 in 1000 people.
 
 ```{r Nathans by state, warning=FALSE, echo=TRUE}
 
@@ -194,7 +235,13 @@ p3 <- plot_usmap(data=prop_N, values = 'prop') +
 p3
 ```
 
+The major take aways from this graph: Nathan is most popular in Utah (intestingly) and least popular in New Jersey.
+
+
+
 ## Mapping total Nathaniels by State
+
+Same principle as the above graph but using Nathaniel instead of Nathan.
 
 ```{r Nathaniels by state, warning=FALSE, echo=TRUE}
 
@@ -215,6 +262,12 @@ p4 <- plot_usmap(data=prop_Nat, values = 'prop') +
 p4
 
 ```
+
+The major takeaways from this graph: Nathaniel is most popular in South Carolina and least popular in North Dakota. However, if we take a look at the scale bar for this graph and compare it to the one for the Nathan-By-State graph, it's clear that Nathan is the more popular name. 
+
+**Note**: Remember, this is for the entire dataset. There are likely to be local trends (e.g., decade-specific trends). See the Nathan-related names graph above for reference.
+
+
 
 ## State preference for Nathan or Nathaniel
 
@@ -254,11 +307,9 @@ det_nvn <- function(non){
     }
   }
   if (length(one) > length(two)){
-    diff = (length(one) + 1) - length(two)
-    return(paste0('Nathan by ', diff, ' states (including DC)'))
+    return(paste0('Majority of states (including DC) prefer Nathan: ', length(one), ' states'))
   }else{
-    diff = (length(two) + 1) - length(one)
-    return(paste0('Nathaniel by ', diff, ' states (including DC'))
+    return(paste0('Majority of states (including DC) prefer Nathaniel: ', length(two), ' states'))
   }
 }
 
@@ -283,6 +334,10 @@ p_non <- plot_usmap(data=props, values = 'non') +
 p_non
 
 ```
+
+This figure provides a nice visulation of what we already could've guessed from the two heatmaps above. Nathan is the more popular variation for an overwhelming majority of states. The only two exceptions are South Carolina (0.17% v 0.12%) and Washington DC (0.14% v 0.11%).
+
+
 
 ```{r saving data, warning=FALSE, echo=FALSE}
 ## raw data as .rds
