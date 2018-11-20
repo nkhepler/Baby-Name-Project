@@ -17,4 +17,4 @@ PNGs in figures/explanatory_figures and figures/exploratory_figures
           d. Popularity of name(s) over time
     
     
-CSVs were obtained from kaggle.com
+CSVs were obtained from kaggle.com but I also saved all data as RDS files. RDSs for the original raw data can be found in data/raw_data, while any processing that I did is located in data/tidy_data
